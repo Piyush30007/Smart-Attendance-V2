@@ -1,0 +1,46 @@
+# ===========================
+# Python
+# ===========================
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Environment
+.env
+.env.*
+
+# ===========================
+# VS Code
+# ===========================
+.vscode/
+
+# ===========================
+# Node
+# ===========================
+node_modules/
+dist/
+
+# ===========================
+# Storage
+# ===========================
+storage/students/*
+storage/embeddings/*
+storage/weights/*
+storage/checkpoints/*
+storage/reports/*
+storage/temp/*
+!storage/**/.gitkeep
+
+# ===========================
+# Alembic
+# ===========================
+alembic/__pycache__/
+
+# ===========================
+# OS
+# ===========================
+.DS_Store
+Thumbs.db

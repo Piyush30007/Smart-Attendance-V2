@@ -1,0 +1,8 @@
+__pycache__
+*.pyc
+.env
+.git
+tests/
+test.db
+models_store/encodings/*
+!models_store/encodings/.gitkeep
