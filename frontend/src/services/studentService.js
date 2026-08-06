@@ -1,9 +1,17 @@
-import { studentApi } from "./api";
+import api from "./api";
 
 const studentService = {
-  list: studentApi.list,
-  create: studentApi.create,
-  remove: studentApi.remove,
+  list() {
+    return api.get("/students");
+  },
+
+  create(data) {
+    return api.post("/students", data);
+  },
+
+  remove(id) {
+    return api.delete(`/students/${id}`);
+  },
 };
 
 export default studentService;

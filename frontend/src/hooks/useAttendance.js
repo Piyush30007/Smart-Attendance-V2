@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { attendanceApi } from "../services/api";
-
+import attendanceService from "../services/attendanceService";
+import { getErrorMessage }  from "../utils/getErrorMessage";
 export function useAttendance(studentId) {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -10,10 +10,10 @@ export function useAttendance(studentId) {
     setLoading(true);
     setError(null);
     try {
-      const { data } = await attendanceApi.list(studentId);
+      const { data } = await attendanceService.list(studentId);
       setRecords(data);
     } catch (err) {
-      setError(err.response?.data?.detail || "Failed to load attendance");
+  setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }

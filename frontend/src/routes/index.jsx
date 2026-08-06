@@ -1,19 +1,42 @@
-import Attendance from "../pages/Attendance";
-import Dashboard from "../pages/Dashboard";
-import Login from "../pages/Login";
-import Reports from "../pages/Reports";
-import Settings from "../pages/Settings";
-import Students from "../pages/Students";
-import Subjects from "../pages/Subjects";
-import Teachers from "../pages/Teachers";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
-export const appRoutes = [
-  { path: "/", element: Dashboard, label: "Dashboard" },
-  { path: "/login", element: Login, label: "Login" },
-  { path: "/students", element: Students, label: "Students" },
-  { path: "/teachers", element: Teachers, label: "Teachers" },
-  { path: "/attendance", element: Attendance, label: "Attendance" },
-  { path: "/reports", element: Reports, label: "Reports" },
-  { path: "/subjects", element: Subjects, label: "Subjects" },
-  { path: "/settings", element: Settings, label: "Settings" },
-];
+import { appRoutes } from "./appRoutes";
+import ProtectedRoute from "../components/ProtectedRoute";
+import AppLayout from "../layouts/AppLayout";
+function AppRoutes() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        {appRoutes.map((route) => {
+          const Component = route.element;
+
+          return (
+            <Route
+              key={route.path}
+              path={route.path}
+              element={
+                route.protected ? (
+                <ProtectedRoute>
+                    <AppLayout>
+                     <Component />
+                     </AppLayout>
+                </ProtectedRoute>
+             ) : (
+             <Component />
+  )
+}
+            />
+          );
+        })}
+
+        {/* Any invalid URL */}
+        <Route
+          path="*"
+          element={<Navigate to="/" replace />}
+        />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+export default AppRoutes;

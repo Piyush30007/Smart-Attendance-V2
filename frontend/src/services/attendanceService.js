@@ -1,9 +1,26 @@
-import { attendanceApi } from "./api";
+import api from "./api";
 
 const attendanceService = {
-  list: attendanceApi.list,
-  mark: attendanceApi.mark,
-  report: attendanceApi.report,
+  list(studentId) {
+    return api.get("/attendance", {
+      params: { student_id: studentId },
+    });
+  },
+
+  mark(imageBase64) {
+    return api.post("/attendance/mark", {
+      image_base64: imageBase64,
+    });
+  },
+
+  report(startDate, endDate) {
+    return api.get("/attendance/report", {
+      params: {
+        start_date: startDate,
+        end_date: endDate,
+      },
+    });
+  },
 };
 
 export default attendanceService;
