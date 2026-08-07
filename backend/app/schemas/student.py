@@ -9,6 +9,11 @@ class StudentCreate(BaseModel):
     email: EmailStr
     course: str
 
+class StudentUpdate(BaseModel):
+    name : str
+    email : EmailStr
+    course : str
+
 
 class StudentOut(BaseModel):
     id: int
@@ -16,5 +21,5 @@ class StudentOut(BaseModel):
     name: str
     email: EmailStr
     course: str
+    model_config = ConfigDict(from_attributes=True)
 
-model_config = ConfigDict(from_attributes=True)

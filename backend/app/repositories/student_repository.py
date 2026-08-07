@@ -10,6 +10,7 @@ Responsibilities:
 from sqlalchemy.orm import Session
 
 from app.models.student import Student
+from app.schemas.student import StudentCreate , StudentUpdate
 
 class StudentRepository:
     @staticmethod
@@ -54,3 +55,12 @@ class StudentRepository:
 #here we use static methods because we dont need to create an instancce of the repository class to use its methods. we can directly call the methods on the class itself. this is a common pattern in repository classes.
 #without statice we should do something like def get_by_id(self) when we need to call it we should do something like StudentRepository().get_by_id(db, student_id) but with static we can do StudentRepository.get_by_id(db, student_id)
 
+    @staticmethod
+    def update(db : Session , student : Student , payload : StudentUpdate)->Student:
+        student.name = payload.name 
+        student.email = payload.email
+        student.course = payload.course
+        
+        db.commit()
+        db.refresh(student)
+        return student

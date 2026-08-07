@@ -8,7 +8,9 @@ const studentService = {
   create(data) {
     return api.post("/students", data);
   },
-
+  update(id ,data){
+    return api.put(`/students/${id}`,data);
+  },
   remove(id) {
     return api.delete(`/students/${id}`);
   },

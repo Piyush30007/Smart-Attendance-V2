@@ -4,8 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import get_settings
 from app.core.logging import configure_logging
 from app.database.database import Base, engine
-from app.api import attendance, auth, students
-
+from app.api import attendance, auth, students , teachers
+from app.routes import dashboard
 settings = get_settings()
 configure_logging(settings.ENV)
 
@@ -43,8 +43,8 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(students.router)
 app.include_router(attendance.router)
-
-
+app.include_router(dashboard.router)
+app.include_router(teachers.router)
 @app.get("/health", tags=["health"])
 def health_check():
     return {"status": "ok", "env": settings.ENV}

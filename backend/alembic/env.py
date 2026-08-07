@@ -9,6 +9,7 @@ from app.models.admin import Admin
 from app.models.student import Student
 from app.core.config import get_settings
 from app.models.attendance import Attendance
+from app.models.teacher import Teacher
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config

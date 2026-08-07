@@ -12,7 +12,7 @@
 from sqlalchemy.orm import Session
 from app.models.student import Student
 from app.repositories.student_repository import StudentRepository
-from app.schemas.student import StudentCreate
+from app.schemas.student import StudentCreate , StudentUpdate
 
 class StudentService:
     @staticmethod
@@ -45,4 +45,16 @@ class StudentService:
             raise ValueError("Student not found")
         StudentRepository.delete(db, student)
             
+    @staticmethod
+    def update_student(db : Session , student_id : int , payload : StudentUpdate,)->Student:
+        """Update An Existing Student"""
+        student = StudentRepository.get_by_id(db , student_id)
+        if not student :
+            raise ValueError("Studen Not  Found")
+        #check if another student already uses the email or not 
+        existing = StudentRepository.get_by_email(db , payload.email)
+        if existing and existing.id!=student_id:
+            raise ValueError("Email Already Exists")
         
+        return StudentRepository.update(db ,student , payload)
+       

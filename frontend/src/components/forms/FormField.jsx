@@ -1,8 +1,29 @@
-export default function FormField({ label, ...inputProps }) {
+export default function FormField({
+  label,
+  name,
+  type = "text",
+  value,
+  onChange,
+  placeholder,
+  disabled = false,
+  required = false,
+}) {
   return (
-    <label>
-      <span>{label}</span>
-      <input {...inputProps} />
-    </label>
+    <div className="form-field">
+      <label htmlFor={name}>
+        {label}
+      </label>
+
+      <input
+        id={name}
+        name={name}
+        type={type}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        disabled={disabled}
+        required={required}
+      />
+    </div>
   );
 }

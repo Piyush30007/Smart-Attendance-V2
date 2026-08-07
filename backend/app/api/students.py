@@ -15,7 +15,7 @@ from app.database.database import get_db
 from app.middleware.auth import get_current_admin
 from app.models.admin import Admin
 from app.models.student import Student
-from app.schemas.student import StudentCreate, StudentOut
+from app.schemas.student import StudentCreate, StudentOut , StudentUpdate
 from app.services.student_service import StudentService
 
 router = APIRouter(prefix="/students", tags=["Students"])
@@ -42,3 +42,21 @@ def delete_student(student_id : int , db:Session = Depends(get_db), current_admi
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     
     
+@router.put("/{student_id}", response_model=StudentOut)
+def update_student(
+    student_id: int,
+    payload: StudentUpdate,
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin),
+):
+    try:
+        return StudentService.update_student(
+            db,
+            student_id,
+            payload,
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        )
