@@ -17,6 +17,12 @@ const authService = {
   signup(data) {
     return api.post("/auth/signup", data);
   },
+
+  googleLogin(credential) {
+    return api.post("/auth/google", {
+      credential,
+    });
+  },
 };
 
 export default authService;

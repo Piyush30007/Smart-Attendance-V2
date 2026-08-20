@@ -1,6 +1,7 @@
 import { createContext, useContext, useState } from "react";
 import authService from "../services/authService";
 import { getErrorMessage } from "../utils/getErrorMessage";
+
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
@@ -9,7 +10,7 @@ export function AuthProvider({ children }) {
     localStorage.getItem("access_token")
   );
 
-  // Login user
+  // Login with username and password
   const login = async (username, password) => {
     try {
       const { data } = await authService.login(username, password);
@@ -24,13 +25,37 @@ export function AuthProvider({ children }) {
         message: "Login successful",
       };
     } catch (error) {
-  console.error("Login Error:", error);
-  return {
-    success: false,
-    message : getErrorMessage(error),
-  };
-}
+      console.error("Login Error:", error);
 
+      return {
+        success: false,
+        message: getErrorMessage(error),
+      };
+    }
+  };
+
+  // Login with Google
+  const googleLogin = async (credential) => {
+    try {
+      const { data } = await authService.googleLogin(credential);
+
+      localStorage.setItem("access_token", data.access_token);
+      localStorage.setItem("refresh_token", data.refresh_token);
+
+      setToken(data.access_token);
+
+      return {
+        success: true,
+        message: "Google login successful",
+      };
+    } catch (error) {
+      console.error("Google Login Error:", error);
+
+      return {
+        success: false,
+        message: getErrorMessage(error),
+      };
+    }
   };
 
   // Logout user
@@ -45,6 +70,7 @@ export function AuthProvider({ children }) {
     token,
     isAuthenticated: !!token,
     login,
+    googleLogin,
     logout,
   };
 

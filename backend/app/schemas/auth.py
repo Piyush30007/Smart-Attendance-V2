@@ -48,3 +48,5 @@ class AdminOut(BaseModel):
     is_active : bool
     model_config = ConfigDict(from_attributes=True)
     
+class GoogleLoginRequest(BaseModel):
+    credential: str 
