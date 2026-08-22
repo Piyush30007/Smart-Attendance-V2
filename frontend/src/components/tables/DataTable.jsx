@@ -42,7 +42,7 @@ export default function DataTable({
             <tr key={row.id}>
               {columns.map((column) => (
                 <td key={column.key}>
-                  {row[column.key]}
+                  {column.render ? column.render(row) : row[column.key]}
                 </td>
               ))}
 

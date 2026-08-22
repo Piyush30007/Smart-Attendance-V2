@@ -10,7 +10,7 @@ class Admin(Base):
     username = Column(String(80), unique=True, index=True, nullable=False)
     full_name = Column(String(120), nullable=False)
     email = Column(String(120), unique=True, nullable=False)
-    hashed_password = Column(String(255), nullable=False)
+    hashed_password = Column(String(255), nullable=True)
     role = Column(String(20), default=UserRole.ADMIN)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

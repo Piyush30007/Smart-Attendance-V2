@@ -19,7 +19,8 @@ class StudentOut(BaseModel):
     id: int
     student_code: str
     name: str
-    email: EmailStr
-    course: str
+    email: Optional[EmailStr] = None
+    course: Optional[str] = None
+    profile_completed: bool = False
     model_config = ConfigDict(from_attributes=True)
 

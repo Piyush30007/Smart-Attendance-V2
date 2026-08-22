@@ -29,11 +29,19 @@ class StudentService:
         if StudentRepository.get_by_student_code(db, payload.student_code):
             raise ValueError("Student code already exists")
         
+        profile_completed = (
+            bool(payload.student_code)
+            and bool(payload.name)
+            and bool(payload.email)
+            and bool(payload.course)
+        )
+
         student = Student(
             name=payload.name,
             email=payload.email,
-            course =payload.course,
-            student_code=payload.student_code
+            course=payload.course,
+            student_code=payload.student_code,
+            profile_completed=profile_completed
         )
         return StudentRepository.create(db, student)
 

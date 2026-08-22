@@ -6,11 +6,11 @@ from app.models.teacher import Teacher
 class TeacherRepository:
 
     @staticmethod
-    def get_all(db: Session):
+    def get_all(db: Session)-> list[Teacher]:
         return db.query(Teacher).all()
 
     @staticmethod
-    def get_by_id(db: Session, teacher_id: int):
+    def get_by_id(db: Session, teacher_id: int) -> Teacher:
         return (
             db.query(Teacher)
             .filter(Teacher.id == teacher_id)
@@ -18,15 +18,21 @@ class TeacherRepository:
         )
 
     @staticmethod
-    def get_by_email(db: Session, email: str):
+    def get_by_email(db: Session, email: str) -> Teacher:
         return (
             db.query(Teacher)
             .filter(Teacher.email == email)
             .first()
         )
-
     @staticmethod
-    def get_by_teacher_code(db: Session, teacher_code: str):
+    def get_by_username(db: Session, username: str)-> Teacher:
+        return (
+            db.query(Teacher)
+            .filter(Teacher.username == username)
+            .first()
+        )
+    @staticmethod
+    def get_by_teacher_code(db: Session, teacher_code: str)-> Teacher:
         return (
             db.query(Teacher)
             .filter(Teacher.teacher_code == teacher_code)
@@ -34,7 +40,7 @@ class TeacherRepository:
         )
 
     @staticmethod
-    def create(db: Session, teacher: Teacher):
+    def create(db: Session, teacher: Teacher)-> Teacher:
         db.add(teacher)
         db.commit()
         db.refresh(teacher)

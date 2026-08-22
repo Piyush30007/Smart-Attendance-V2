@@ -25,6 +25,11 @@ class StudentRepository:
     def get_by_student_code(db :Session , student_code:str) -> Student | None:
         """Get a student by student code from the database """
         return db.query(Student).filter(Student.student_code == student_code).first()
+
+    @staticmethod
+    def get_by_username(db: Session, username: str) -> Student | None:
+        """Get a student by username from the database """
+        return db.query(Student).filter(Student.username == username).first()
     
     @staticmethod
     def get_all(db: Session) -> list[Student]:
@@ -39,13 +44,7 @@ class StudentRepository:
         db.refresh(student)
         return student  
     
-    @staticmethod
-    def update(db: Session, student: Student) -> Student:
-        """Update an existing student in the database"""
-        db.commit()
-        db.refresh(student)
-        return student
-    
+
     @staticmethod
     def delete(db: Session, student: Student) -> None:
         """Delete an existing student from the database"""
@@ -60,6 +59,12 @@ class StudentRepository:
         student.name = payload.name 
         student.email = payload.email
         student.course = payload.course
+        student.profile_completed = (
+            bool(student.student_code)
+            and bool(student.name)
+            and bool(student.email)
+            and bool(student.course)
+        )
         
         db.commit()
         db.refresh(student)

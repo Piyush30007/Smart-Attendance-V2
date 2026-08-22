@@ -99,6 +99,21 @@ export default function Teachers() {
       key: "department",
       label: "Department",
     },
+    {
+      key: "profile_completed",
+      label: "Profile Status",
+      render: (teacher) => (
+        <span
+          style={{
+            color: teacher.profile_completed ? "#16a34a" : "#ea580c",
+            fontWeight: "600",
+            fontSize: "0.85rem",
+          }}
+        >
+          {teacher.profile_completed ? "COMPLETE" : "INCOMPLETE"}
+        </span>
+      ),
+    },
   ];
 
   return (

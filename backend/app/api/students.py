@@ -17,12 +17,14 @@ from app.models.admin import Admin
 from app.models.student import Student
 from app.schemas.student import StudentCreate, StudentOut , StudentUpdate
 from app.services.student_service import StudentService
+from app.middleware.roles import require_roles
+
 
 router = APIRouter(prefix="/students", tags=["Students"])
 
 @router.get("", response_model=List[StudentOut])
 
-def list_students(db: Session = Depends(get_db), current_admin: Admin = Depends(get_current_admin)):
+def list_students(db: Session = Depends(get_db), current_user = Depends(require_roles("admin", "teacher"))):
     return StudentService.list_students(db)
 
 @router.post("",response_model=StudentOut, status_code=status.HTTP_201_CREATED)

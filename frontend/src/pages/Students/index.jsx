@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { useAuth } from "../../contexts/AuthContext";
+
 import studentService from "../../services/studentService";
 import StudentForm from "./StudentForm";
 import DataTable from "../../components/tables/DataTable";
@@ -14,7 +16,8 @@ export default function Students() {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const [showRegister, setShowRegister] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
 
@@ -97,6 +100,21 @@ export default function Students() {
       key: "course",
       label: "Course",
     },
+    {
+      key: "profile_completed",
+      label: "Profile Status",
+      render: (student) => (
+        <span
+          style={{
+            color: student.profile_completed ? "#16a34a" : "#ea580c",
+            fontWeight: "600",
+            fontSize: "0.85rem",
+          }}
+        >
+          {student.profile_completed ? "COMPLETE" : "INCOMPLETE"}
+        </span>
+      ),
+    },
   ];
 
   return (
@@ -104,8 +122,8 @@ export default function Students() {
 
       <PageHeader
         title="Students"
-        buttonText="Register Student"
-        onButtonClick={handleAddStudent}
+        buttonText={isAdmin ? "Register Student" : undefined}
+        onButtonClick={isAdmin ? handleAddStudent : undefined}
       />
 
       <SearchBar
@@ -137,14 +155,11 @@ export default function Students() {
           <DataTable
             columns={columns}
             data={filteredStudents}
-            renderActions={(student) => (
+            renderActions={isAdmin ? (student) => (
               <>
-                <button
-                  onClick={() => handleEditStudent(student)}
-                >
+                <button onClick={() => handleEditStudent(student)}>
                   Edit
                 </button>
-
                 <button
                   onClick={() => handleDelete(student.id)}
                   style={{ marginLeft: "10px" }}
@@ -152,7 +167,7 @@ export default function Students() {
                   Delete
                 </button>
               </>
-            )}
+            ) : null}
           />
         </Card>
       )}

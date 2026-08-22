@@ -23,11 +23,19 @@ class TeacherService:
         ):
             raise ValueError("Teacher code already exists")
 
+        profile_completed = (
+            bool(payload.teacher_code)
+            and bool(payload.name)
+            and bool(payload.email)
+            and bool(payload.department)
+        )
+
         teacher = Teacher(
             teacher_code=payload.teacher_code,
             name=payload.name,
             email=payload.email,
             department=payload.department,
+            profile_completed=profile_completed,
         )
 
         return TeacherRepository.create(db, teacher)
@@ -57,6 +65,12 @@ class TeacherService:
         teacher.name = payload.name
         teacher.email = payload.email
         teacher.department = payload.department
+        teacher.profile_completed = (
+            bool(teacher.teacher_code)
+            and bool(teacher.name)
+            and bool(teacher.email)
+            and bool(teacher.department)
+        )
 
         db.commit()
         db.refresh(teacher)

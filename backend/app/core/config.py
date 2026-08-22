@@ -24,7 +24,9 @@ class Settings(BaseSettings):
 
     # Database
     DATABASE_URL: str = "postgresql+psycopg2://postgres:postgres@localhost:5432/smart_attendance"
-    GOOGLE_CLIENT_ID : str
+    GOOGLE_CLIENT_ID: str
+    TEACHER_INVITE_CODE: str
+    ADMIN_INVITE_CODE: str
     # Redis (caching / sessions)
     REDIS_URL: str = "redis://localhost:6379/0"
 

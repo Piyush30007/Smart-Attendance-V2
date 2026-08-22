@@ -8,18 +8,31 @@
 from pydantic import BaseModel, ConfigDict ,EmailStr
 
 
-
+#signup
+class SignupRequest(BaseModel):
+    username:str 
+    full_name : str =""
+    email : EmailStr
+    password : str
+    role : str
+    invite_code : str = ""
 #Admin Signup
-class AdminSignup(BaseModel):
-    username: str
-    full_name: str
-    email: EmailStr
-    password: str
-
+# class AdminSignup(BaseModel):
+#     username: str
+#     full_name: str = ""
+#     email: EmailStr
+#     password: str
+#     role : str  
+#     invite_code : str = ""
+#login request 
+class LoginRequest(BaseModel):
+    username_or_email:str
+    password:str
+    
 #Admin Login
-class AdminLogin(BaseModel):
-    username: str
-    password: str
+# class AdminLogin(BaseModel):
+#     username: str
+#     password: str
 
 #JWT Token Response
 class TokenPair(BaseModel):
@@ -48,5 +61,10 @@ class AdminOut(BaseModel):
     is_active : bool
     model_config = ConfigDict(from_attributes=True)
     
+#Google Login / Signup
 class GoogleLoginRequest(BaseModel):
     credential: str 
+    mode : str = "login"
+    role : str | None = None
+    invite_code : str = ""
+    

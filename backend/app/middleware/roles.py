@@ -1,12 +1,17 @@
 from collections.abc import Callable
+from fastapi import Depends, HTTPException, status
 
-from fastapi import Depends
-
-from app.middleware.auth import get_current_admin
+from app.middleware.auth import get_current_user
 
 
-def require_roles(*_roles: str) -> Callable:
-    def dependency(current_admin=Depends(get_current_admin)):
-        return current_admin
+def require_roles(*allowed_roles: str) -> Callable:
+    def dependency(current_user=Depends(get_current_user)):
+        if current_user.role not in allowed_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Insufficient permissions",
+            )
+        return current_user
 
     return dependency
+
