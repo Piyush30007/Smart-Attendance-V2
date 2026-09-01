@@ -66,3 +66,8 @@ class StudentService:
         
         return StudentRepository.update(db ,student , payload)
        
+    @staticmethod
+    def get_registered_face_embeddings(db : Session)-> dict[int , str]:
+        """Get All Registered Face Embeddings"""
+        students = StudentRepository.get_students_with_face_embedding(db)
+        return {s.id : s.encoding_path for s in students}

@@ -12,7 +12,7 @@ from app.models.attendance import Attendance
 from app.models.student import Student
 
 
-def mark_attendance(db: Session, student: Student, confidence: float, liveness_passed: bool) -> Attendance:
+def mark_attendance(db: Session, student: Student, confidence: float, liveness_passed: bool) -> tuple[Attendance , bool]:
     today = date.today()
     existing = (
         db.query(Attendance)
@@ -20,7 +20,7 @@ def mark_attendance(db: Session, student: Student, confidence: float, liveness_p
         .first()
     )
     if existing:
-        return existing  # already marked today — idempotent
+        return existing , True  # already marked today — idempotent
 
     record = Attendance(
         student_id=student.id,
@@ -32,7 +32,7 @@ def mark_attendance(db: Session, student: Student, confidence: float, liveness_p
     db.add(record)
     db.commit()
     db.refresh(record)
-    return record
+    return record , False 
 
 
 def export_attendance_csv(db: Session, start_date: date, end_date: date) -> str:

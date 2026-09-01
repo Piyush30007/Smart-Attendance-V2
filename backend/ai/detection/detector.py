@@ -1,1 +1,37 @@
 """Face detection entrypoints for the attendance pipeline."""
+import cv2 
+from insightface.app import FaceAnalysis
+from ai.utils.face_model import create_face_model
+class FaceDetector:
+    def __init__(self, app=None):
+        self.app = app if app is not None else create_face_model()
+
+    def detect_faces(self, frame):
+
+        """Detect All Faces in a BGR OpenCV Frame
+        Returns :
+        list of dictionaries:
+        [
+        {
+        "bbox" : [x1 , y1 , x2 , y2]
+        "score" : 0.98
+        "face": : insightface_Face_object 
+        }]
+        
+        """
+        
+        faces = self.app.get(frame)
+        results = []
+        for face in faces:
+            bbox = face.bbox.astype(int).tolist()
+            
+            results.append({
+
+                "bbox" : bbox ,
+                "score" : float(face.det_score),
+                "face" : face
+            })
+        
+        return results
+    
+    

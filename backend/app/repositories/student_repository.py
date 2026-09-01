@@ -69,3 +69,16 @@ class StudentRepository:
         db.commit()
         db.refresh(student)
         return student
+
+    @staticmethod
+    def update_encoding_path(db : Session , student : Student , encoding_path: str) -> Student:
+        student.encoding_path = encoding_path
+        db.commit()
+        db.refresh(student)
+        return student
+        
+    @staticmethod
+    def get_students_with_face_embedding(db : Session )->list[Student] :
+        return db.query(Student).filter(Student.encoding_path.is_not(None),Student.is_active == True).all()
+
+    

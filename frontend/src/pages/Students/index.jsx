@@ -3,6 +3,7 @@ import { useAuth } from "../../contexts/AuthContext";
 
 import studentService from "../../services/studentService";
 import StudentForm from "./StudentForm";
+import RegisterFaceModal from "./RegisterFaceModal";
 import DataTable from "../../components/tables/DataTable";
 
 import PageHeader from "../../components/common/PageHeader";
@@ -20,6 +21,7 @@ export default function Students() {
   const isAdmin = user?.role === "admin";
   const [showRegister, setShowRegister] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
+  const [registeringStudent, setRegisteringStudent] = useState(null);
 
   const [search, setSearch] = useState("");
 
@@ -142,6 +144,16 @@ export default function Students() {
         </Card>
       )}
 
+      {registeringStudent && (
+        <RegisterFaceModal
+          studentId={registeringStudent.id}
+          studentName={registeringStudent.name}
+          student={registeringStudent}
+          onSuccess={fetchStudents}
+          onClose={() => setRegisteringStudent(null)}
+        />
+      )}
+
       {loading && <LoadingSpinner />}
 
       {error && (
@@ -157,6 +169,15 @@ export default function Students() {
             data={filteredStudents}
             renderActions={isAdmin ? (student) => (
               <>
+                <button
+                  onClick={() => setRegisteringStudent(student)}
+                  style={{
+                    backgroundColor: "#059669",
+                    marginRight: "10px",
+                  }}
+                >
+                  Register Face
+                </button>
                 <button onClick={() => handleEditStudent(student)}>
                   Edit
                 </button>

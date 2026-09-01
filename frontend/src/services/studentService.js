@@ -14,6 +14,10 @@ const studentService = {
   remove(id) {
     return api.delete(`/students/${id}`);
   },
+  registerFace(studentId , imageBase64)
+{
+  return api.post(`/students/${studentId}/register-face` , {image_base64 : imageBase64});
+}
 };
 
 export default studentService;

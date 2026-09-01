@@ -24,3 +24,17 @@ class StudentOut(BaseModel):
     profile_completed: bool = False
     model_config = ConfigDict(from_attributes=True)
 
+class StudentFaceRegisterRequest(BaseModel):
+    """
+    Schema for accepting student face registration request
+    """
+    image_base64 :str 
+    
+class StudentFaceRegisterResponse(BaseModel):
+    
+    student_id : int 
+    student_name : str 
+    student_code : str 
+    has_face : bool 
+    message : str 
+    

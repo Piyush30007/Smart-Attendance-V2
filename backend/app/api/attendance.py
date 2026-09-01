@@ -1,44 +1,103 @@
 import base64
-import numpy as np
-import cv2
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
 from datetime import date
 from typing import List, Optional
 
-from app.database.database import get_db
-from app.models.attendance import Attendance
-from app.schemas.attendance import MarkAttendanceRequest, AttendanceOut
-from app.services.face_service import get_face_embedding
-from ai.recognition.recognizer import match_student
-from app.services.attendance_service import mark_attendance, export_attendance_csv
+import cv2
+from fastapi import APIRouter, Depends, HTTPException
+import numpy as np
+from sqlalchemy.orm import Session
+
 from ai.utils.insightface import verify_liveness
 from app.core.logging import get_logger
-
+from app.database.database import get_db
+from app.models.attendance import Attendance
+from app.schemas.attendance import (
+    AttendanceOut,
+    MarkAttendanceRequest,
+    MarkAttendanceResponse,
+)
+from app.services.attendance_service import export_attendance_csv, mark_attendance
+from app.services.face_service import recognize_face
+from ai.spoof_detection.spoof import is_liveness_pass
 router = APIRouter(prefix="/attendance", tags=["attendance"])
 logger = get_logger(__name__)
 
 
-@router.post("/mark", response_model=AttendanceOut)
-def mark(payload: MarkAttendanceRequest, db: Session = Depends(get_db)):
-    frame_bytes = base64.b64decode(payload.image_base64)
-    frame = cv2.imdecode(np.frombuffer(frame_bytes, np.uint8), cv2.IMREAD_COLOR)
+@router.post("/mark", response_model=MarkAttendanceResponse)
+def mark(
+    payload: MarkAttendanceRequest,
+    db: Session = Depends(get_db)
+):
+    image_data = payload.image_base64
 
-    embedding = get_face_embedding(frame)
-    if embedding is None:
-        raise HTTPException(status_code=422, detail="No face detected in the frame")
+    if "," in image_data:
+        image_data = image_data.split(",", 1)[1]
 
-    # Liveness gate — rejects a photo/video held up to the camera.
-    if not verify_liveness([frame]):
-        raise HTTPException(status_code=403, detail="Liveness check failed")
+    try:
+        frame_bytes = base64.b64decode(image_data)
+    except Exception:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid Base64 image"
+        )
 
-    student = match_student(db, embedding)
-    if student is None:
-        raise HTTPException(status_code=404, detail="Face not recognized")
+    frame = cv2.imdecode(
+        np.frombuffer(frame_bytes, np.uint8),
+        cv2.IMREAD_COLOR
+    )
+    if frame is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid image"
+        )
+    #1 liveness score check first 
+    is_live,score,error = is_liveness_pass(frame) 
+    if error :
+        raise HTTPException(status_code=400 , detail = f"Liveness check failed: {error}")
+    if not is_live:
+        raise HTTPException(status_code=403, detail =  "Spoof detected. Please use a live face, not a photo or phone screen.")
+    
 
-    record = mark_attendance(db, student, confidence=1.0, liveness_passed=True)
-    logger.info(f"Attendance marked for student_id={student.id}")
-    return record
+    result = recognize_face(db, frame)
+
+    if result is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Face not recognized"
+        )
+
+    
+
+    student = result["student"]
+    confidence = result["similarity_score"]
+
+    record, already_marked = mark_attendance(
+        db,
+        student,
+        confidence=confidence,
+        liveness_passed=True
+    )
+
+    logger.info(
+        f"Attendance marked for student_id={student.id}"
+    )
+
+    return MarkAttendanceResponse(
+        id=record.id,
+        student_id=student.id,
+        student_name=student.name,
+        student_code=student.student_code,
+        course=student.course,
+        date=record.date,
+        status=record.status,
+        confidence_score=record.confidence_score,
+        already_marked=already_marked,
+        message=(
+            "Attendance already marked today"
+            if already_marked
+            else "Attendance marked successfully"
+        ),
+    )
 
 
 @router.get("/report")

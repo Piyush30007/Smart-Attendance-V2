@@ -21,6 +21,14 @@ def cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:
 def verify_liveness(frames: list[np.ndarray]) -> bool:
     """
     Returns True if the frames pass a liveness check, False otherwise.
-    TODO: Implement liveness verification logic.
     """
-    raise NotImplementedError("Port liveness verification logic here")
+    if not frames or len(frames) == 0:
+        return False
+    for frame in frames:
+        if frame is None or frame.size == 0:
+            return False
+        if frame.shape[0] < 50 or frame.shape[1] < 50:
+            return False
+        if float(np.std(frame)) < 5.0:
+            return False
+    return True

@@ -15,10 +15,10 @@ from app.database.database import get_db
 from app.middleware.auth import get_current_admin
 from app.models.admin import Admin
 from app.models.student import Student
-from app.schemas.student import StudentCreate, StudentOut , StudentUpdate
+from app.schemas.student import StudentCreate, StudentOut , StudentUpdate, StudentFaceRegisterRequest , StudentFaceRegisterResponse
 from app.services.student_service import StudentService
 from app.middleware.roles import require_roles
-
+from app.services.face_service import register_face
 
 router = APIRouter(prefix="/students", tags=["Students"])
 
@@ -61,4 +61,37 @@ def update_student(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(e),
+        )
+
+@router.post("/{student_id}/register-face", response_model=StudentFaceRegisterResponse)
+def register_student_face(
+    student_id: int,
+    payload: StudentFaceRegisterRequest,
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin),
+):
+    # Validate image base64
+    if not payload.image_base64:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Image base64 is required",
+        )
+
+    try:
+        result = register_face(
+            db=db, student_id=student_id, image_base64=payload.image_base64
+        )
+        student = result["student"]
+
+        print(f"[TRACE] REGISTER FACE RESPONSE sending for student_id={student.id}")
+        return StudentFaceRegisterResponse(
+            student_id=student.id,
+            student_name=student.name,
+            student_code=student.student_code,
+            has_face=True,
+            message="Face registered successfully",
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
         )
