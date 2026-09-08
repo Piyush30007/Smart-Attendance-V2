@@ -4,6 +4,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import studentService from "../../services/studentService";
 import StudentForm from "./StudentForm";
 import RegisterFaceModal from "./RegisterFaceModal";
+import StudentHistoryModal from "./StudentHistoryModal";
 import DataTable from "../../components/tables/DataTable";
 
 import PageHeader from "../../components/common/PageHeader";
@@ -27,6 +28,7 @@ export default function Students() {
   const [showRegister, setShowRegister] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
   const [registeringStudent, setRegisteringStudent] = useState(null);
+  const [selectedHistoryStudent, setSelectedHistoryStudent] = useState(null);
 
   // Modal state for deletion
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -156,20 +158,25 @@ export default function Students() {
     {
       key: "profile_completed",
       label: "Face ID Status",
-      render: (student) => (
-        <span
-          className={`status-pill ${
-            student.profile_completed ? "present" : "absent"
-          }`}
-        >
+      render: (student) => {
+        const hasFace = Boolean(
+          student.has_face || (student.encoding_path && student.profile_completed)
+        );
+        return (
           <span
-            className={`status-dot ${
-              student.profile_completed ? "present" : "absent"
+            className={`status-pill ${
+              hasFace ? "present" : "absent"
             }`}
-          />
-          {student.profile_completed ? "Face Registered" : "Pending Face"}
-        </span>
-      ),
+          >
+            <span
+              className={`status-dot ${
+                hasFace ? "present" : "absent"
+              }`}
+            />
+            {hasFace ? "Face Registered" : "Pending Face"}
+          </span>
+        );
+      },
     },
   ];
 
@@ -244,6 +251,14 @@ export default function Students() {
         />
       )}
 
+      {/* Attendance History Modal */}
+      {selectedHistoryStudent && (
+        <StudentHistoryModal
+          student={selectedHistoryStudent}
+          onClose={() => setSelectedHistoryStudent(null)}
+        />
+      )}
+
       {/* Delete Confirmation Modal (Replaces window.confirm) */}
       <ConfirmModal
         isOpen={Boolean(deleteTarget)}
@@ -286,81 +301,104 @@ export default function Students() {
             <DataTable
               columns={columns}
               data={filteredStudents}
-              renderActions={
-                isAdmin
-                  ? (student) => (
-                      <div className="table-actions-row">
-                        <button
-                          type="button"
-                          className="btn-action face-id"
-                          onClick={() => setRegisteringStudent(student)}
-                          title="Register or update Face ID"
-                        >
-                          <svg
-                            width="14"
-                            height="14"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2.2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            aria-hidden="true"
-                          >
-                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                          </svg>
-                          <span>Face ID</span>
-                        </button>
+              renderActions={(student) => (
+                <div className="table-actions-row">
+                  <button
+                    type="button"
+                    className="btn-action history"
+                    onClick={() => setSelectedHistoryStudent(student)}
+                    title="View attendance history"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <circle cx="12" cy="12" r="10" />
+                      <polyline points="12 6 12 12 16 14" />
+                    </svg>
+                    <span>History</span>
+                  </button>
 
-                        <button
-                          type="button"
-                          className="btn-action edit"
-                          onClick={() => handleEditStudent(student)}
-                          title="Edit student profile"
+                  {isAdmin && (
+                    <>
+                      <button
+                        type="button"
+                        className="btn-action face-id"
+                        onClick={() => setRegisteringStudent(student)}
+                        title="Register or update Face ID"
+                      >
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          aria-hidden="true"
                         >
-                          <svg
-                            width="14"
-                            height="14"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            aria-hidden="true"
-                          >
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                          </svg>
-                          <span>Edit</span>
-                        </button>
+                          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                        </svg>
+                        <span>Face ID</span>
+                      </button>
 
-                        <button
-                          type="button"
-                          className="btn-action delete"
-                          onClick={() => handleOpenDeleteModal(student)}
-                          title="Delete student"
+                      <button
+                        type="button"
+                        className="btn-action edit"
+                        onClick={() => handleEditStudent(student)}
+                        title="Edit student profile"
+                      >
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          aria-hidden="true"
                         >
-                          <svg
-                            width="14"
-                            height="14"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            aria-hidden="true"
-                          >
-                            <polyline points="3 6 5 6 21 6" />
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                          </svg>
-                          <span>Delete</span>
-                        </button>
-                      </div>
-                    )
-                  : null
-              }
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                        </svg>
+                        <span>Edit</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        className="btn-action delete"
+                        onClick={() => handleOpenDeleteModal(student)}
+                        title="Delete student"
+                      >
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          aria-hidden="true"
+                        >
+                          <polyline points="3 6 5 6 21 6" />
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                        </svg>
+                        <span>Delete</span>
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
             />
           </div>
         </Card>

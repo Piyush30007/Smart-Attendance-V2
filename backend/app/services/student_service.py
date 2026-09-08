@@ -21,6 +21,11 @@ class StudentService:
         return StudentRepository.get_all(db)
     
     @staticmethod
+    def get_student(db: Session, student_id: int) -> Student | None:
+        """Get a student by ID"""
+        return StudentRepository.get_by_id(db, student_id)
+    
+    @staticmethod
     def create_student(db: Session, payload: StudentCreate) -> Student:
         """Create a new student in the database"""
         if StudentRepository.get_by_email(db, payload.email):
@@ -29,12 +34,7 @@ class StudentService:
         if StudentRepository.get_by_student_code(db, payload.student_code):
             raise ValueError("Student code already exists")
         
-        profile_completed = (
-            bool(payload.student_code)
-            and bool(payload.name)
-            and bool(payload.email)
-            and bool(payload.course)
-        )
+        profile_completed = False
 
         student = Student(
             name=payload.name,

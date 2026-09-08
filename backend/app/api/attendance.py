@@ -31,21 +31,33 @@ def mark(
     total_start = time.perf_counter()    
     image_data = payload.image_base64
 
+    if not image_data or not image_data.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Image data is required"
+        )
+
     if "," in image_data:
         image_data = image_data.split(",", 1)[1]
     t0 = time.perf_counter()
     try:
         frame_bytes = base64.b64decode(image_data)
+        if not frame_bytes:
+            raise ValueError("Empty image buffer")
     except Exception:
         raise HTTPException(
             status_code=400,
             detail="Invalid Base64 image"
         )
 
-    frame = cv2.imdecode(
-        np.frombuffer(frame_bytes, np.uint8),
-        cv2.IMREAD_COLOR
-    )
+    try:
+        frame = cv2.imdecode(
+            np.frombuffer(frame_bytes, np.uint8),
+            cv2.IMREAD_COLOR
+        )
+    except Exception:
+        frame = None
+
     if frame is None:
         raise HTTPException(
             status_code=400,
@@ -72,7 +84,17 @@ def mark(
         raise HTTPException(status_code=403, detail =  "Spoof detected. Please use a live face, not a photo or phone screen.")
     
     t0 = time.perf_counter()
-    result = recognize_face(db, frame)
+    try:
+        result = recognize_face(db, frame)
+    except ValueError as e:
+        total_time = (time.perf_counter() - total_start) * 1000
+        fail_msg = (
+            f"[AttendanceTime] Decode={decode_time:.2f}ms | Liveness={liveness_time:.2f}ms | Total={total_time:.2f}ms"
+        )
+        print(fail_msg)
+        logger.info(fail_msg)
+        raise HTTPException(status_code=400, detail=str(e))
+
     recog_time = (time.perf_counter() - t0) * 1000
     recog_msg = f"[AttendanceTime] Recognition={recog_time:.2f}ms"
     print(recog_msg)
@@ -88,7 +110,7 @@ def mark(
         logger.info(fail_msg)
         raise HTTPException(
             status_code=404,
-            detail="Face not recognized"
+            detail="Face not recognized. Student not registered in the system."
         )
 
     student = result["student"]

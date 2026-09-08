@@ -1399,6 +1399,18 @@ tbody tr:hover {
   border-color: #fca5a5;
 }
 
+.btn-action.history {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #334155;
+}
+
+.btn-action.history:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
 /* Confirm Modal */
 .confirm-modal-card {
   background: #ffffff;

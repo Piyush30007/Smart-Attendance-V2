@@ -73,6 +73,7 @@ class StudentRepository:
     @staticmethod
     def update_encoding_path(db : Session , student : Student , encoding_path: str) -> Student:
         student.encoding_path = encoding_path
+        student.profile_completed = True
         db.commit()
         db.refresh(student)
         return student

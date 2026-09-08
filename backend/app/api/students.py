@@ -23,9 +23,15 @@ from app.services.face_service import register_face
 router = APIRouter(prefix="/students", tags=["Students"])
 
 @router.get("", response_model=List[StudentOut])
-
 def list_students(db: Session = Depends(get_db), current_user = Depends(require_roles("admin", "teacher"))):
     return StudentService.list_students(db)
+
+@router.get("/{student_id}", response_model=StudentOut)
+def get_student(student_id: int, db: Session = Depends(get_db), current_user = Depends(require_roles("admin", "teacher"))):
+    student = StudentService.get_student(db, student_id)
+    if not student or not student.is_active:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")
+    return student
 
 @router.post("",response_model=StudentOut, status_code=status.HTTP_201_CREATED)
 def create_student(payload: StudentCreate , db:Session = Depends(get_db), current_admin: Admin = Depends(get_current_admin)):

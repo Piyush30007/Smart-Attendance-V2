@@ -82,6 +82,12 @@ def recognize_face(db : Session , frame : np.ndarray):
     faces = detector.detect_faces(frame)
     detection_time = (time.perf_counter() - t0) * 1000
     print(f"[DetectionDebug] frame={frame.shape} | faces={len(faces)} | time={detection_time:.2f}ms")
+
+    if len(faces) == 0:
+        raise ValueError("No face detected in the frame. Please look directly at the camera.")
+    if len(faces) > 1:
+        raise ValueError("Multiple faces detected in the frame. Only one person should be in the camera view.")
+
     # 2. Embedding generation/retrieval
     t0 = time.perf_counter()
     embedding = None
@@ -183,14 +189,19 @@ def register_face(db : Session  , student_id : int , image_base64 : str):
          image_base64 = image_base64.split(",", 1)[1]
 
     #4 decode base64 
-    try :
+    try:
         image_bytes = base64.b64decode(image_base64)
+        if not image_bytes:
+            raise ValueError("Image buffer is empty")
     except Exception as e:
-        raise ValueError(f"Invalid base64 string : {str(e)}")
+        raise ValueError(f"Invalid base64 string: {str(e)}")
     
     #5 convert to OpenCV format (numpy array) 
-    nparr = np.frombuffer(image_bytes , np.uint8)
-    frame = cv2.imdecode(nparr , cv2.IMREAD_COLOR)
+    nparr = np.frombuffer(image_bytes, np.uint8)
+    try:
+        frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    except Exception:
+        frame = None
 
     if frame is None:
         raise ValueError("Failed to decode image")

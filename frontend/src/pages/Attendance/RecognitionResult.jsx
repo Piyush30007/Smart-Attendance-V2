@@ -21,10 +21,34 @@ export default function RecognitionResult({
     );
   }
 
-  // 2. Error State (Spoof, No face, Not registered, etc.)
+  // 2. Error State (Spoof, No face, Multiple faces, Not recognized, Server error)
   if (errorMessage) {
     const isSpoof = errorMessage.toLowerCase().includes("spoof");
     const isNoFace = errorMessage.toLowerCase().includes("no face");
+    const isMultipleFaces = errorMessage.toLowerCase().includes("multiple faces");
+    const isNotRecognized =
+      errorMessage.toLowerCase().includes("not recognized") ||
+      errorMessage.toLowerCase().includes("not registered");
+
+    let title = "Recognition Failed";
+    let hint = "Verify that the student is registered with a valid Face ID.";
+
+    if (isSpoof) {
+      title = "Liveness Check Failed (Spoof Detected)";
+      hint = "Physical presence check failed. Please ensure a real person is directly facing the camera.";
+    } else if (isNoFace) {
+      title = "No Face Detected";
+      hint = "Please look straight into the camera lens with good lighting.";
+    } else if (isMultipleFaces) {
+      title = "Multiple Faces Detected";
+      hint = "Only one person should be in the camera frame when marking attendance.";
+    } else if (isNotRecognized) {
+      title = "Face Not Recognized";
+      hint = "No registered student matched this face. Please ensure you have enrolled your Face ID.";
+    } else {
+      title = "Attendance Processing Error";
+      hint = "An unexpected error occurred. Please check network connectivity and try again.";
+    }
 
     return (
       <div className="recognition-result-card error">
@@ -47,22 +71,12 @@ export default function RecognitionResult({
             </svg>
           </div>
           <div>
-            <h4 className="res-title">
-              {isSpoof
-                ? "Liveness Check Failed"
-                : isNoFace
-                ? "No Face Detected"
-                : "Recognition Failed"}
-            </h4>
+            <h4 className="res-title">{title}</h4>
             <p className="res-sub">{errorMessage}</p>
           </div>
         </div>
 
-        <div className="res-help-hint">
-          {isSpoof && "Ensure you are physically present facing the camera directly."}
-          {isNoFace && "Please look straight into the camera lens with good lighting."}
-          {!isSpoof && !isNoFace && "Verify that the student is registered with a valid Face ID."}
-        </div>
+        <div className="res-help-hint">{hint}</div>
       </div>
     );
   }

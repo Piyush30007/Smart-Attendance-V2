@@ -22,6 +22,7 @@ class StudentOut(BaseModel):
     email: Optional[EmailStr] = None
     course: Optional[str] = None
     profile_completed: bool = False
+    has_face: bool = False
     model_config = ConfigDict(from_attributes=True)
 
 class StudentFaceRegisterRequest(BaseModel):
