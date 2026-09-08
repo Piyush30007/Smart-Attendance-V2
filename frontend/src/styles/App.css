@@ -1,5 +1,5 @@
 /* ===============================
-   Global Layout
+   Global Layout & Navbar
 ================================ */
 
 body {
@@ -15,22 +15,172 @@ body {
   min-height: 100vh;
 }
 
-nav {
+.navbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 14px 24px;
+  height: 64px;
+  padding: 0 24px;
   background: #ffffff;
   border-bottom: 1px solid #e2e8f0;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  position: sticky;
+  top: 0;
+  z-index: 50;
 }
 
-nav span {
+.navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nav-toggle-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  background: transparent;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.nav-toggle-btn:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  user-select: none;
+}
+
+.brand-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+}
+
+.brand-title {
   font-size: 1.15rem;
   font-weight: 700;
-  color: #1e293b;
-  letter-spacing: -0.2px;
+  color: #0f172a;
+  letter-spacing: -0.3px;
 }
+
+.navbar-right {
+  display: flex;
+  align-items: center;
+}
+
+.nav-user-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.user-profile-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 12px 4px 4px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 30px;
+}
+
+.user-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+}
+
+.user-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.user-role-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 12px;
+  letter-spacing: 0.3px;
+}
+
+.role-admin {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+.role-teacher {
+  background: #d1fae5;
+  color: #047857;
+}
+
+.role-student {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.role-user {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.btn-logout {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  background: #ffffff;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-logout:hover {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #b91c1c;
+}
+
+/* ===============================
+   Sidebar
+================================ */
 
 .app-body {
   display: flex;
@@ -38,7 +188,7 @@ nav span {
 }
 
 .sidebar {
-  width: 220px;
+  width: 230px;
   background: #ffffff;
   border-right: 1px solid #e2e8f0;
   display: flex;
@@ -46,27 +196,95 @@ nav span {
   padding: 20px 12px;
   gap: 4px;
   flex-shrink: 0;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.sidebar a {
+.sidebar-mobile-header {
+  display: none;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 8px 16px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.sidebar-mobile-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.sidebar-close-btn {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  padding: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+
+.sidebar-close-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   padding: 10px 14px;
   color: #475569;
   text-decoration: none;
-  border-radius: 6px;
+  border-radius: 8px;
   font-weight: 500;
   font-size: 14px;
   transition: all 0.15s ease;
 }
 
-.sidebar a:hover {
-  background: #f1f5f9;
+.sidebar-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  transition: color 0.15s ease;
+}
+
+.sidebar-label {
+  flex: 1;
+}
+
+.sidebar-link:hover {
+  background: #f8fafc;
   color: #1e293b;
 }
 
-.sidebar a.active {
+.sidebar-link:hover .sidebar-icon {
+  color: #1e293b;
+}
+
+.sidebar-link.active {
   background: #eff6ff;
   color: #2563eb;
   font-weight: 600;
+}
+
+.sidebar-link.active .sidebar-icon {
+  color: #2563eb;
+}
+
+.sidebar-backdrop {
+  display: none;
 }
 
 .page-content {
@@ -82,6 +300,63 @@ nav span {
   max-width: 1200px;
   margin: 0 auto;
   padding: 10px 20px;
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 768px) {
+  .nav-toggle-btn {
+    display: inline-flex;
+  }
+
+  .user-meta {
+    display: none;
+  }
+
+  .user-profile-chip {
+    padding: 0;
+    background: transparent;
+    border: none;
+  }
+
+  .btn-logout span {
+    display: none;
+  }
+
+  .btn-logout {
+    padding: 8px;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 1000;
+    width: 260px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    transform: translateX(-100%);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .sidebar-mobile-header {
+    display: flex;
+  }
+
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(2px);
+    z-index: 999;
+  }
+
+  .page-content {
+    padding: 16px 12px;
+  }
 }
 
 /* ===============================
