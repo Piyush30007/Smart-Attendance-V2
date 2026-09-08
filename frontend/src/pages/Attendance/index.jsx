@@ -1,30 +1,56 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import attendanceService from "../../services/attendanceService";
+import dashboardService from "../../services/dashboardService";
+import studentService from "../../services/studentService";
+
 import PageHeader from "../../components/common/PageHeader";
 import Card from "../../components/common/Card";
-import LoadingSpinner from "../../components/common/LoadingSpinner";
+import Toast from "../../components/common/Toast";
+
+import AttendanceStats from "./AttendanceStats";
+import AttendanceScanner from "./AttendanceScanner";
+import RecognitionResult from "./RecognitionResult";
+import SessionActivityLog from "./SessionActivityLog";
+import AttendanceHistoryTable from "./AttendanceHistoryTable";
+
 import { getErrorMessage } from "../../utils/getErrorMessage";
+import "./Attendance.css";
 
 export default function Attendance() {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const streamRef = useRef(null);
+  const isScanningRef = useRef(false);
 
+  // Active view: "terminal" (Scanner & Session) or "records" (Full Database History)
+  const [activeView, setActiveView] = useState("terminal");
+
+  // Camera state
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState("");
   const [loading, setLoading] = useState(false);
   const [autoScan, setAutoScan] = useState(false);
+
+  // Verification results & logs
   const [scanResult, setScanResult] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [sessionLogs, setSessionLogs] = useState([]);
+  const [toast, setToast] = useState(null);
+
+  // Real backend statistics & records
+  const [stats, setStats] = useState({
+    students: 0,
+    present: 0,
+    absent: 0,
+  });
+  const [loadingStats, setLoadingStats] = useState(true);
+
   const [historyList, setHistoryList] = useState([]);
+  const [studentMap, setStudentMap] = useState({});
   const [loadingHistory, setLoadingHistory] = useState(false);
-  const [activeTab, setActiveTab] = useState("camera"); // "camera" or "history"
 
-  const isScanningRef = useRef(false);
-
-  // Start Camera
-  const startCamera = async () => {
+  // Start Camera Stream
+  const startCamera = useCallback(async () => {
     try {
       setCameraError("");
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -43,13 +69,13 @@ export default function Attendance() {
     } catch (err) {
       console.error("Camera access error:", err);
       setCameraError(
-        "Could not access webcam. Please check camera permissions in your browser."
+        "Could not access webcam. Please check camera permissions in your browser settings."
       );
       setCameraActive(false);
     }
-  };
+  }, []);
 
-  // Stop Camera
+  // Stop Camera Stream
   const stopCamera = useCallback(() => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
@@ -62,30 +88,66 @@ export default function Attendance() {
     setAutoScan(false);
   }, []);
 
-  // Initialize camera on mount & cleanup on unmount
+  // Fetch real statistics from backend
+  const fetchStats = useCallback(async () => {
+    try {
+      setLoadingStats(true);
+      const { data } = await dashboardService.getStats();
+      if (data) {
+        setStats(data);
+      }
+    } catch (err) {
+      console.error("Error fetching stats:", err);
+    } finally {
+      setLoadingStats(false);
+    }
+  }, []);
+
+  // Fetch attendance records and student lookup
+  const fetchAttendanceData = useCallback(async () => {
+    try {
+      setLoadingHistory(true);
+      const [attendanceRes, studentsRes] = await Promise.allSettled([
+        attendanceService.list(),
+        studentService.list(),
+      ]);
+
+      if (
+        studentsRes.status === "fulfilled" &&
+        Array.isArray(studentsRes.value?.data)
+      ) {
+        const map = {};
+        studentsRes.value.data.forEach((st) => {
+          map[st.id] = st;
+        });
+        setStudentMap(map);
+      }
+
+      if (
+        attendanceRes.status === "fulfilled" &&
+        Array.isArray(attendanceRes.value?.data)
+      ) {
+        setHistoryList(attendanceRes.value.data);
+      }
+    } catch (err) {
+      console.error("Error fetching attendance history:", err);
+    } finally {
+      setLoadingHistory(false);
+    }
+  }, []);
+
+  // Initial load
   useEffect(() => {
     startCamera();
-    fetchTodayHistory();
+    fetchStats();
+    fetchAttendanceData();
 
     return () => {
       stopCamera();
     };
-  }, [stopCamera]);
+  }, [startCamera, stopCamera, fetchStats, fetchAttendanceData]);
 
-  // Fetch Attendance History for Today
-  const fetchTodayHistory = async () => {
-    try {
-      setLoadingHistory(true);
-      const { data } = await attendanceService.list();
-      setHistoryList(data || []);
-    } catch (err) {
-      console.error("Error loading attendance history:", err);
-    } finally {
-      setLoadingHistory(false);
-    }
-  };
-
-  // Capture Frame and Mark Attendance
+  // Capture current camera frame and send to verification endpoint
   const captureAndMark = useCallback(async () => {
     if (!videoRef.current || !canvasRef.current || isScanningRef.current) {
       return;
@@ -103,7 +165,7 @@ export default function Attendance() {
     const ctx = canvas.getContext("2d");
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    // Convert frame to Base64 JPEG string
+    // Generate Base64 JPEG frame
     const imageBase64 = canvas.toDataURL("image/jpeg", 0.9);
 
     isScanningRef.current = true;
@@ -115,7 +177,7 @@ export default function Attendance() {
       setScanResult(data);
       setErrorMessage("");
 
-      // Add to live session logs
+      // Update in-memory session logs
       setSessionLogs((prev) => [
         {
           id: data.id || Date.now(),
@@ -126,13 +188,30 @@ export default function Attendance() {
           status: data.status,
           confidence_score: data.confidence_score,
           already_marked: data.already_marked,
-          time: new Date().toLocaleTimeString(),
+          time: new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
         },
         ...prev.filter((item) => item.student_id !== data.student_id),
       ]);
 
-      // Refresh today's history list
-      fetchTodayHistory();
+      // Show toast confirmation
+      if (data.already_marked) {
+        setToast({
+          type: "success",
+          message: `${data.student_name} (${data.student_code}): ${data.message}`,
+        });
+      } else {
+        setToast({
+          type: "success",
+          message: `Attendance marked for ${data.student_name} (${data.student_code})`,
+        });
+      }
+
+      // Re-fetch backend history and summary stats to keep counts live
+      fetchAttendanceData();
+      fetchStats();
     } catch (err) {
       const errMsg = getErrorMessage(err);
       setErrorMessage(errMsg);
@@ -141,9 +220,9 @@ export default function Attendance() {
       setLoading(false);
       isScanningRef.current = false;
     }
-  }, []);
+  }, [fetchAttendanceData, fetchStats]);
 
-  // Auto-Scan interval hook
+  // Auto-Scan interval hook (runs every 3.5s when active)
   useEffect(() => {
     let intervalId = null;
 
@@ -152,7 +231,7 @@ export default function Attendance() {
         if (!isScanningRef.current) {
           captureAndMark();
         }
-      }, 3500); // scan every 3.5s in auto mode
+      }, 3500);
     }
 
     return () => {
@@ -162,280 +241,117 @@ export default function Attendance() {
 
   return (
     <div className="attendance-page">
+      {/* Toast Feedback */}
+      {toast && (
+        <Toast
+          type={toast.type}
+          message={toast.message}
+          onClose={() => setToast(null)}
+        />
+      )}
+
+      {/* Page Header with Action Mode Switch */}
       <PageHeader
-        title="Live Camera Attendance"
-        buttonText={activeTab === "camera" ? "View History" : "Back to Camera"}
-        onButtonClick={() =>
-          setActiveTab(activeTab === "camera" ? "history" : "camera")
-        }
+        title="Attendance Management"
+        subtitle="Live AI facial recognition terminal &amp; verified institutional attendance logs"
       />
 
-      {activeTab === "camera" ? (
-        <div className="attendance-layout">
-          {/* LEFT: Camera Viewfinder */}
-          <div className="camera-section">
-            <Card>
-              <div className="camera-header">
-                <h3>Live Face Recognition Scanner</h3>
-                <div className="camera-status-indicator">
-                  <span
-                    className={`status-dot ${
-                      cameraActive ? "active" : "inactive"
-                    }`}
-                  />
-                  <span>{cameraActive ? "Camera Live" : "Camera Off"}</span>
-                </div>
-              </div>
+      {/* Section B: Today's Real Attendance Statistics */}
+      <AttendanceStats stats={stats} loading={loadingStats} />
 
-              {cameraError ? (
-                <div className="camera-error-banner">
-                  <p>{cameraError}</p>
-                  <button onClick={startCamera}>Retry Camera Access</button>
-                </div>
-              ) : (
-                <div className="video-viewport">
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    playsInline
-                    muted
-                    className="video-feed"
-                  />
+      {/* Segmented View Tabs */}
+      <div className="attendance-nav-tabs" role="tablist" aria-label="Attendance Views">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeView === "terminal"}
+          className={`att-tab-btn ${activeView === "terminal" ? "active" : ""}`}
+          onClick={() => setActiveView("terminal")}
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+            <circle cx="12" cy="13" r="4" />
+          </svg>
+          <span>Live Biometric Terminal</span>
+        </button>
 
-                  {/* Hidden Canvas for Frame Capturing */}
-                  <canvas ref={canvasRef} style={{ display: "none" }} />
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeView === "records"}
+          className={`att-tab-btn ${activeView === "records" ? "active" : ""}`}
+          onClick={() => setActiveView("records")}
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+            <line x1="16" y1="2" x2="16" y2="6" />
+            <line x1="8" y1="2" x2="8" y2="6" />
+            <line x1="3" y1="10" x2="21" y2="10" />
+          </svg>
+          <span>Attendance Records Log ({historyList.length})</span>
+        </button>
+      </div>
 
-                  {/* Viewfinder Target Reticle */}
-                  {cameraActive && (
-                    <div className="reticle-overlay">
-                      <div className="reticle-box">
-                        <div className="corner top-left" />
-                        <div className="corner top-right" />
-                        <div className="corner bottom-left" />
-                        <div className="corner bottom-right" />
-                        {loading && <div className="scanning-beam" />}
-                      </div>
-                      <p className="reticle-hint">
-                        {loading
-                          ? "Recognizing face..."
-                          : "Position your face inside the box"}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
+      {/* Section A: Live Biometric Terminal */}
+      {activeView === "terminal" && (
+        <div className="terminal-split-layout">
+          {/* Left Column: Camera Viewport & Controls */}
+          <AttendanceScanner
+            videoRef={videoRef}
+            canvasRef={canvasRef}
+            cameraActive={cameraActive}
+            cameraError={cameraError}
+            loading={loading}
+            autoScan={autoScan}
+            onToggleAutoScan={() => setAutoScan((prev) => !prev)}
+            onCapture={captureAndMark}
+            onStartCamera={startCamera}
+            onStopCamera={stopCamera}
+          />
 
-              <div className="camera-controls">
-                <button
-                  type="button"
-                  onClick={captureAndMark}
-                  disabled={!cameraActive || loading}
-                  className="btn-mark"
-                >
-                  {loading ? "Processing..." : "📸 Mark Attendance"}
-                </button>
+          {/* Right Column: Real-time Feedback & Session Activity */}
+          <div className="terminal-right-column">
+            <RecognitionResult
+              scanResult={scanResult}
+              errorMessage={errorMessage}
+              loading={loading}
+              cameraActive={cameraActive}
+            />
 
-                <button
-                  type="button"
-                  onClick={() => setAutoScan((prev) => !prev)}
-                  disabled={!cameraActive}
-                  className={`btn-autoscan ${autoScan ? "active" : ""}`}
-                >
-                  {autoScan ? "⏹ Stop Auto-Scan" : "🔄 Start Auto-Scan"}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={cameraActive ? stopCamera : startCamera}
-                  className="btn-toggle-camera"
-                >
-                  {cameraActive ? "Turn Camera Off" : "Turn Camera On"}
-                </button>
-              </div>
-            </Card>
-
-            {/* Real-time Recognition Result Banner */}
-            {scanResult && (
-              <div
-                className={`scan-result-card ${
-                  scanResult.already_marked ? "warning" : "success"
-                }`}
-              >
-                <div className="result-header">
-                  <span className="result-icon">
-                    {scanResult.already_marked ? "⚠️" : "✅"}
-                  </span>
-                  <div>
-                    <h4>{scanResult.message}</h4>
-                    <p className="result-sub">
-                      {scanResult.already_marked
-                        ? "Student already checked in for today"
-                        : "Attendance successfully recorded in PostgreSQL"}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="result-details-grid">
-                  <div className="detail-item">
-                    <span className="label">Student Name</span>
-                    <span className="value student-name">
-                      {scanResult.student_name}
-                    </span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="label">Student Code</span>
-                    <span className="value">{scanResult.student_code}</span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="label">Course</span>
-                    <span className="value">
-                      {scanResult.course || "N/A"}
-                    </span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="label">Confidence Score</span>
-                    <span className="value score">
-                      {scanResult.confidence_score
-                        ? `${(
-                            parseFloat(scanResult.confidence_score) * 100
-                          ).toFixed(1)}%`
-                        : "N/A"}
-                    </span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="label">Date</span>
-                    <span className="value">{scanResult.date}</span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="label">Status</span>
-                    <span className="badge-present">
-                      {scanResult.status.toUpperCase()}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {errorMessage && (
-              <div className="scan-result-card error">
-                <div className="result-header">
-                  <span className="result-icon">❌</span>
-                  <div>
-                    <h4>Recognition Failed</h4>
-                    <p className="result-sub">{errorMessage}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* RIGHT: Live Session Activity Stream */}
-          <div className="activity-section">
-            <Card>
-              <div className="activity-header">
-                <h3>Today's Live Session Log</h3>
-                <span className="count-badge">
-                  {sessionLogs.length} Marked
-                </span>
-              </div>
-
-              {sessionLogs.length === 0 ? (
-                <div className="empty-logs">
-                  <p>No faces recognized in this session yet.</p>
-                  <span className="subtext">
-                    Look at the camera and click <strong>Mark Attendance</strong> or enable <strong>Auto-Scan</strong>.
-                  </span>
-                </div>
-              ) : (
-                <div className="logs-list">
-                  {sessionLogs.map((log) => (
-                    <div key={log.id} className="log-item">
-                      <div className="log-avatar">
-                        {log.student_name?.charAt(0) || "S"}
-                      </div>
-                      <div className="log-info">
-                        <div className="log-title">
-                          <strong>{log.student_name}</strong>
-                          <span className="log-code">({log.student_code})</span>
-                        </div>
-                        <div className="log-meta">
-                          <span>{log.course}</span>
-                          <span>•</span>
-                          <span>{log.time}</span>
-                          {log.confidence_score && (
-                            <>
-                              <span>•</span>
-                              <span className="log-score">
-                                Score: {(parseFloat(log.confidence_score) * 100).toFixed(1)}%
-                              </span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                      <div className="log-status">
-                        <span
-                          className={`badge ${
-                            log.already_marked ? "badge-warning" : "badge-success"
-                          }`}
-                        >
-                          {log.already_marked ? "Checked-in" : "Present"}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </Card>
+            <SessionActivityLog logs={sessionLogs} />
           </div>
         </div>
-      ) : (
-        /* HISTORY TAB */
-        <Card>
-          <div className="history-header">
-            <h3>Database Attendance Records (Today)</h3>
-            <button onClick={fetchTodayHistory} disabled={loadingHistory}>
-              {loadingHistory ? "Refreshing..." : "🔄 Refresh"}
-            </button>
-          </div>
+      )}
 
-          {loadingHistory ? (
-            <LoadingSpinner />
-          ) : historyList.length === 0 ? (
-            <p style={{ textAlign: "center", padding: "30px", color: "#6b7280" }}>
-              No attendance records found for today.
-            </p>
-          ) : (
-            <table>
-              <thead>
-                <tr>
-                  <th>Record ID</th>
-                  <th>Student ID</th>
-                  <th>Date</th>
-                  <th>Check-In Time</th>
-                  <th>Status</th>
-                  <th>Confidence Score</th>
-                </tr>
-              </thead>
-              <tbody>
-                {historyList.map((rec) => (
-                  <tr key={rec.id}>
-                    <td>#{rec.id}</td>
-                    <td>Student #{rec.student_id}</td>
-                    <td>{rec.date}</td>
-                    <td>
-                      {rec.check_in_time
-                        ? new Date(rec.check_in_time).toLocaleTimeString()
-                        : "N/A"}
-                    </td>
-                    <td>
-                      <span className="badge-present">{rec.status}</span>
-                    </td>
-                    <td>{rec.confidence_score || "N/A"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+      {/* Section C: Attendance Records / History */}
+      {activeView === "records" && (
+        <Card>
+          <AttendanceHistoryTable
+            records={historyList}
+            studentMap={studentMap}
+            loading={loadingHistory}
+            onRefresh={fetchAttendanceData}
+          />
         </Card>
       )}
     </div>
