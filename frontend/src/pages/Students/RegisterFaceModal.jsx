@@ -43,7 +43,7 @@ export default function RegisterFaceModal({
     } catch (err) {
       console.error("Camera access error:", err);
       setCameraError(
-        "Could not access webcam. Please check camera permissions in your browser."
+        "Could not access webcam. Please ensure camera permissions are granted in your browser settings."
       );
       setCameraActive(false);
     }
@@ -74,7 +74,7 @@ export default function RegisterFaceModal({
 
     const video = videoRef.current;
     if (video.readyState !== video.HAVE_ENOUGH_DATA) {
-      setErrorMessage("Camera feed is not ready yet. Please wait a moment.");
+      setErrorMessage("Camera feed is warming up. Please hold still for a moment.");
       return;
     }
 
@@ -85,7 +85,7 @@ export default function RegisterFaceModal({
     const ctx = canvas.getContext("2d");
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    // Convert frame to Base64 JPEG string
+    // Convert captured frame to Base64 JPEG string
     const imageBase64 = canvas.toDataURL("image/jpeg", 0.9);
 
     setLoading(true);
@@ -94,7 +94,7 @@ export default function RegisterFaceModal({
 
     try {
       const response = await studentService.registerFace(id, imageBase64);
-      const msg = response?.data?.message || "Face registered successfully!";
+      const msg = response?.data?.message || "Biometric face profile registered successfully!";
       setSuccessMessage(msg);
 
       if (onSuccess) {
@@ -124,137 +124,119 @@ export default function RegisterFaceModal({
   return (
     <div
       className="modal-overlay"
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: "rgba(15, 23, 42, 0.65)",
-        backdropFilter: "blur(4px)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 1000,
-        padding: "20px",
-      }}
       onClick={(e) => {
         if (e.target === e.currentTarget && !loading) {
           handleClose();
         }
       }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="register-face-title"
     >
-      <div
-        className="modal-content"
-        style={{
-          background: "#ffffff",
-          borderRadius: "12px",
-          width: "100%",
-          maxWidth: "560px",
-          padding: "24px",
-          boxShadow:
-            "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
-          position: "relative",
-          maxHeight: "90vh",
-          overflowY: "auto",
-        }}
-      >
+      <div className="face-modal-card">
         {/* Modal Header */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-            marginBottom: "16px",
-          }}
-        >
-          <div>
-            <h2 style={{ margin: 0, fontSize: "1.25rem", color: "#1e293b" }}>
-              Register Student Face
-            </h2>
-            <p
-              style={{
-                margin: "4px 0 0",
-                fontSize: "0.875rem",
-                color: "#64748b",
-              }}
-            >
-              Student: <strong>{name}</strong>{" "}
-              {studentCode ? `(${studentCode})` : ""}
-            </p>
+        <div className="face-modal-header">
+          <div className="face-modal-info">
+            <div className="face-icon-badge" aria-hidden="true">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+            </div>
+            <div>
+              <h2 id="register-face-title" className="face-modal-title">
+                Register Student Face ID
+              </h2>
+              <p className="face-modal-subtitle">
+                Student: <strong>{name}</strong>{" "}
+                {studentCode && <span className="student-code-tag">{studentCode}</span>}
+              </p>
+            </div>
           </div>
+
           <button
             type="button"
             onClick={handleClose}
             disabled={loading}
-            style={{
-              background: "transparent",
-              border: "none",
-              fontSize: "1.5rem",
-              color: "#94a3b8",
-              cursor: "pointer",
-              padding: "0 6px",
-              lineHeight: 1,
-            }}
-            title="Close"
+            className="form-close-btn"
+            title="Close modal"
+            aria-label="Close"
           >
             &times;
           </button>
         </div>
 
-        {/* Camera Status */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: "12px",
-          }}
-        >
-          <div className="camera-status-indicator">
+        {/* Camera Live Status Bar */}
+        <div className="camera-status-bar">
+          <div className="camera-live-indicator">
             <span
-              className={`status-dot ${cameraActive ? "active" : "inactive"}`}
+              className={`live-status-dot ${cameraActive ? "active" : "inactive"}`}
+              aria-hidden="true"
             />
-            <span>{cameraActive ? "Camera Live" : "Camera Off"}</span>
+            <span className="live-status-label">
+              {cameraActive ? "Live Video Feed" : "Camera Disconnected"}
+            </span>
           </div>
+
           {cameraActive && !loading && (
-            <span style={{ fontSize: "0.8rem", color: "#64748b" }}>
-              Position face inside the frame
+            <span className="camera-guideline-hint">
+              Align face within the frame
             </span>
           )}
         </div>
 
         {/* Camera Viewport or Error */}
         {cameraError ? (
-          <div className="camera-error-banner" style={{ marginBottom: "16px" }}>
-            <p style={{ margin: "0 0 12px 0" }}>{cameraError}</p>
-            <button type="button" onClick={startCamera}>
+          <div className="camera-error-banner" role="alert">
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <p>{cameraError}</p>
+            <button
+              type="button"
+              className="btn-retry-camera"
+              onClick={startCamera}
+            >
               Retry Camera Access
             </button>
           </div>
         ) : (
-          <div
-            className="video-viewport"
-            style={{ height: "320px", marginBottom: "16px" }}
-          >
+          <div className="responsive-video-container">
             <video
               ref={videoRef}
               autoPlay
               playsInline
               muted
-              className="video-feed"
+              className="responsive-video-feed"
             />
 
-            {/* Hidden canvas for snapshot */}
+            {/* Hidden canvas for snapshot rasterization */}
             <canvas ref={canvasRef} style={{ display: "none" }} />
 
-            {/* Viewfinder Target Reticle */}
+            {/* Target Reticle Overlay */}
             {cameraActive && (
-              <div className="reticle-overlay">
-                <div
-                  className="reticle-box"
-                  style={{ width: "190px", height: "210px" }}
-                >
+              <div className="reticle-overlay" aria-hidden="true">
+                <div className="responsive-reticle-box">
                   <div className="corner top-left" />
                   <div className="corner top-right" />
                   <div className="corner bottom-left" />
@@ -263,8 +245,8 @@ export default function RegisterFaceModal({
                 </div>
                 <p className="reticle-hint">
                   {loading
-                    ? "Registering face embedding..."
-                    : "Look directly at the camera"}
+                    ? "Extracting facial embedding vectors..."
+                    : "Look directly into the camera"}
                 </p>
               </div>
             )}
@@ -273,54 +255,54 @@ export default function RegisterFaceModal({
 
         {/* Success Message Banner */}
         {successMessage && (
-          <div
-            className="scan-result-card success"
-            style={{ marginTop: "0", marginBottom: "16px" }}
-          >
-            <div className="result-header" style={{ marginBottom: 0 }}>
-              <span className="result-icon">✅</span>
-              <div>
-                <h4 style={{ color: "#15803d" }}>Face Registered Successfully</h4>
-                <p className="result-sub">{successMessage}</p>
-              </div>
-            </div>
+          <div className="auth-alert success" role="status">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+              <polyline points="22 4 12 14.01 9 11.01" />
+            </svg>
+            <span>{successMessage}</span>
           </div>
         )}
 
         {/* Error Message Banner */}
         {errorMessage && (
-          <div
-            className="scan-result-card error"
-            style={{ marginTop: "0", marginBottom: "16px" }}
-          >
-            <div className="result-header" style={{ marginBottom: 0 }}>
-              <span className="result-icon">❌</span>
-              <div>
-                <h4 style={{ color: "#dc2626" }}>Registration Failed</h4>
-                <p className="result-sub">{errorMessage}</p>
-              </div>
-            </div>
+          <div className="auth-alert error" role="alert">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <span>{errorMessage}</span>
           </div>
         )}
 
         {/* Action Controls */}
-        <div
-          style={{
-            display: "flex",
-            gap: "10px",
-            justifyContent: "flex-end",
-            marginTop: "16px",
-          }}
-        >
+        <div className="face-modal-actions">
           <button
             type="button"
             onClick={handleClose}
             disabled={loading}
-            style={{
-              background: "#e2e8f0",
-              color: "#334155",
-              fontWeight: "600",
-            }}
+            className="btn-modal-cancel"
           >
             Cancel
           </button>
@@ -328,13 +310,33 @@ export default function RegisterFaceModal({
           <button
             type="button"
             onClick={handleCaptureAndRegister}
-            disabled={!cameraActive || loading || !!successMessage}
-            className="btn-mark"
-            style={{
-              minWidth: "160px",
-            }}
+            disabled={!cameraActive || loading || Boolean(successMessage)}
+            className="btn-capture-face"
           >
-            {loading ? "Registering..." : "📸 Capture & Register"}
+            {loading ? (
+              <span className="btn-loading-content">
+                <span className="btn-spinner" aria-hidden="true"></span>
+                <span>Registering Face ID...</span>
+              </span>
+            ) : (
+              <>
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                  <circle cx="12" cy="13" r="4" />
+                </svg>
+                <span>Capture &amp; Register</span>
+              </>
+            )}
           </button>
         </div>
       </div>

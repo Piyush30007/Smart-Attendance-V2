@@ -1,22 +1,29 @@
 export default function PageHeader({
   title,
+  subtitle,
   buttonText,
   onButtonClick,
+  buttonIcon,
 }) {
-  return (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: "25px",
-      }}
-    >
-      <h1>{title}</h1>
+  const hasAction = Boolean(buttonText && onButtonClick);
 
-      <button onClick={onButtonClick}>
-        {buttonText}
-      </button>
+  return (
+    <div className="page-header">
+      <div className="page-header-text">
+        <h1 className="page-header-title">{title}</h1>
+        {subtitle && <p className="page-header-subtitle">{subtitle}</p>}
+      </div>
+
+      {hasAction && (
+        <button
+          type="button"
+          className="btn-page-header-action"
+          onClick={onButtonClick}
+        >
+          {buttonIcon && <span className="btn-icon" aria-hidden="true">{buttonIcon}</span>}
+          <span>{buttonText}</span>
+        </button>
+      )}
     </div>
   );
 }
