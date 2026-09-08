@@ -4,22 +4,17 @@ export default function DataTable({
   renderActions,
 }) {
   return (
-    <table
-      border="1"
-      cellPadding="10"
-      cellSpacing="0"
-      width="100%"
-    >
+    <table className="app-data-table">
       <thead>
         <tr>
           {columns.map((column) => (
-            <th key={column.key}>
+            <th key={column.key} scope="col">
               {column.label}
             </th>
           ))}
 
           {renderActions && (
-            <th>Actions</th>
+            <th scope="col">Actions</th>
           )}
         </tr>
       </thead>
@@ -32,14 +27,15 @@ export default function DataTable({
                 columns.length +
                 (renderActions ? 1 : 0)
               }
-              align="center"
+              className="empty-table-cell"
+              style={{ textAlign: "center", padding: "28px", color: "#64748b" }}
             >
               No data found
             </td>
           </tr>
         ) : (
-          data.map((row) => (
-            <tr key={row.id}>
+          data.map((row, index) => (
+            <tr key={row.id || index}>
               {columns.map((column) => (
                 <td key={column.key}>
                   {column.render ? column.render(row) : row[column.key]}

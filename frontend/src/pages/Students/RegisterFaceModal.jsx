@@ -67,6 +67,19 @@ export default function RegisterFaceModal({
     };
   }, [stopCamera]);
 
+  // Dismiss modal on Escape
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape" && !loading) {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [loading, onClose]);
+
   const handleCaptureAndRegister = async () => {
     if (!videoRef.current || !canvasRef.current || loading) {
       return;

@@ -1,0 +1,386 @@
+/* =========================================================
+   Settings Page Styles
+   ========================================================= */
+
+.settings-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.settings-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.settings-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.settings-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 16px;
+}
+
+.settings-card-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.settings-card-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.settings-card-description {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+/* Profile Row */
+.profile-overview-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 8px 0;
+  flex-wrap: wrap;
+}
+
+.profile-avatar-large {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #ffffff;
+  font-size: 1.5rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+  flex-shrink: 0;
+}
+
+.profile-meta-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.profile-username {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.profile-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.role-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.role-chip.admin {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.role-chip.teacher {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.session-status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  color: #475569;
+  font-weight: 500;
+}
+
+.status-dot-green {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+}
+
+.profile-fields-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 6px;
+}
+
+.profile-readonly-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+
+.profile-field-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.profile-field-value {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #1e293b;
+  word-break: break-all;
+}
+
+/* Preferences Form Grid */
+.preferences-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.pref-control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pref-label {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.pref-helper {
+  font-size: 0.78rem;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.pref-select {
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 0.88rem;
+  outline: none;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.pref-select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.pref-checkbox-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.pref-checkbox {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  accent-color: #2563eb;
+  cursor: pointer;
+}
+
+/* Telemetry Grid */
+.telemetry-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.telemetry-item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 14px 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+
+.telemetry-label {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.telemetry-value-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.status-badge-healthy {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+  border-radius: 12px;
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+/* Danger Zone */
+.settings-card.danger-zone {
+  border-color: #fecaca;
+  background: #fffafa;
+}
+
+.settings-card.danger-zone .settings-card-header {
+  border-bottom-color: #fee2e2;
+}
+
+.danger-zone-title {
+  color: #dc2626 !important;
+}
+
+.danger-actions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.danger-action-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: #ffffff;
+  border: 1px solid #fee2e2;
+  border-radius: 12px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.danger-action-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.danger-action-title {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #991b1b;
+}
+
+.danger-action-desc {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.btn-danger-outline {
+  padding: 8px 16px;
+  background: #ffffff;
+  border: 1px solid #ef4444;
+  color: #dc2626;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-danger-outline:hover:not(:disabled) {
+  background: #dc2626;
+  color: #ffffff;
+}
+
+.btn-danger-outline:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .profile-fields-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .telemetry-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .preferences-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-fields-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .telemetry-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .danger-action-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .danger-action-item button {
+    width: 100%;
+  }
+}
