@@ -51,7 +51,26 @@ class StudentService:
         student = StudentRepository.get_by_id(db, student_id)
         if not student:
             raise ValueError("Student not found")
-        StudentRepository.delete(db, student)
+        
+        # 1. Clean up face embedding from disk if it exists
+        if student.encoding_path:
+            import os
+            if os.path.exists(student.encoding_path):
+                try:
+                    os.remove(student.encoding_path)
+                except OSError:
+                    pass
+            student.encoding_path = None
+
+        student.is_active = False
+        db.commit()
+
+        # 2. Remove from active face recognition RAM cache
+        try:
+            from app.services.face_service import recognizer
+            recognizer.remove_embedding(student_id)
+        except Exception:
+            pass
             
     @staticmethod
     def update_student(db : Session , student_id : int , payload : StudentUpdate,)->Student:

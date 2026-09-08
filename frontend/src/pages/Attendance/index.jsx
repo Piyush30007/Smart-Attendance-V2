@@ -218,7 +218,7 @@ export default function Attendance() {
                       <p className="reticle-hint">
                         {loading
                           ? "Recognizing face..."
-                          : "Align face within the frame"}
+                          : "Position your face inside the box"}
                       </p>
                     </div>
                   )}

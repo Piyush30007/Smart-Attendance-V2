@@ -10,6 +10,7 @@ No HTTP logic
 NO camera access 
 """
 import base64
+import time
 import cv2 
 import numpy as np 
 from sqlalchemy.orm import Session
@@ -23,11 +24,30 @@ from app.repositories.student_repository import StudentRepository
 from app.services.student_service import StudentService
 from ai.recognition.storage import save_embeddings
 from ai.spoof_detection.spoof import is_liveness_pass
+from app.core.logging import get_logger
+
+logger = get_logger(__name__)
 # Create once when the application is started
 _face_model = create_face_model()
 detector = FaceDetector(app=_face_model)
 embedder = FaceEmbedder(app=_face_model)
 recognizer = FaceRecognizer(threshold=0.60)
+
+
+#embedding cache intialization 
+
+def initialize_face_cache(db : Session):
+    """
+    Load all registered student face embeddings into RAM 
+    THis should be called at application start up
+    Disk(.npy)-> RAM (global) ->FAST FACE RECOGNITION   
+    """
+    registered_embeddings =(StudentService.get_registered_face_embeddings(db))
+    if not registered_embeddings:
+        print("INFO: No registered faces found in DB")
+        return
+    recognizer.load_registered_embeddings(registered_embeddings)
+    print(f"[Cache] Loaded {len(registered_embeddings)} " f"face embeddings into RAM")
 
 def get_face_embedding(frame : np.ndarray)-> np.ndarray | None:
     """
@@ -55,26 +75,71 @@ def recognize_face(db : Session , frame : np.ndarray):
     }
     or None if no student is recognized 
     """
-    embedding = get_face_embedding(frame)
+    total_start = time.perf_counter()
+
+    # 1. Face detection
+    t0 = time.perf_counter()
+    faces = detector.detect_faces(frame)
+    detection_time = (time.perf_counter() - t0) * 1000
+    print(f"[DetectionDebug] frame={frame.shape} | faces={len(faces)} | time={detection_time:.2f}ms")
+    # 2. Embedding generation/retrieval
+    t0 = time.perf_counter()
+    embedding = None
+    if len(faces) == 1:
+        face_obj = faces[0].get("face")
+        if face_obj is not None and getattr(face_obj, "embedding", None) is not None:
+            raw_embedding = face_obj.embedding
+            norm = np.linalg.norm(raw_embedding)
+            embedding = raw_embedding / norm if norm > 0 else raw_embedding
+        else:
+            embedding = embedder.get_embedding(frame)
+    embedding_time = (time.perf_counter() - t0) * 1000
+
     if embedding is None:
+        total_time = (time.perf_counter() - total_start) * 1000
+        msg = (
+            f"[FaceTime] Detection={detection_time:.2f}ms | Embedding={embedding_time:.2f}ms | "
+            f"Matching=0.00ms | StudentDB=0.00ms | Total={total_time:.2f}ms"
+        )
+        print(msg)
+        logger.info(msg)
         return None
 
-    registered_embeddings = StudentService.get_registered_face_embeddings(db)
-    if not registered_embeddings:
+    # 3. Face recognition/matching
+    t0 = time.perf_counter()
+    result = recognizer.recognize(embedding)
+    matching_time = (time.perf_counter() - t0) * 1000
+
+    if result is None:
+        total_time = (time.perf_counter() - total_start) * 1000
+        msg = (
+            f"[FaceTime] Detection={detection_time:.2f}ms | Embedding={embedding_time:.2f}ms | "
+            f"Matching={matching_time:.2f}ms | StudentDB=0.00ms | Total={total_time:.2f}ms"
+        )
+        print(msg)
+        logger.info(msg)
         return None
 
-    result = recognizer.recognize(embedding, registered_embeddings)
-    
-    if  result is None :
-        return None 
+    # 4. Student database lookup
+    t0 = time.perf_counter()
+    student = StudentRepository.get_by_id(db, result["student_id"])
+    student_db_time = (time.perf_counter() - t0) * 1000
 
-    student = StudentRepository.get_by_id(db , result["student_id"])
+    total_time = (time.perf_counter() - total_start) * 1000
 
-    if student is None :
-        return None 
+    msg = (
+        f"[FaceTime] Detection={detection_time:.2f}ms | Embedding={embedding_time:.2f}ms | "
+        f"Matching={matching_time:.2f}ms | StudentDB={student_db_time:.2f}ms | Total={total_time:.2f}ms"
+    )
+    print(msg)
+    logger.info(msg)
+
+    if student is None:
+        return None
+
     return {
-        "student" : student,
-        "similarity_score" : result["similarity_score"],
+        "student": student,
+        "similarity_score": result["similarity_score"],
     }
 
 
@@ -83,13 +148,23 @@ import time
 def register_face(db : Session  , student_id : int , image_base64 : str):
     """
     Register a face for a existing student 
-    Flow :
+    Flow:
+
     Base64 image
-    -> OpenCV frame 
-    -> detect exactly one face 
-    ->generate embedding 
-    ->save embedding 
-    ->update encoding_path 
+        ↓
+    OpenCV frame
+        ↓
+    Liveness check
+        ↓
+    Detect exactly one face
+        ↓
+    Generate embedding
+        ↓
+    Save embedding
+        ↓
+    Update database
+        ↓
+    Update RAM cache
     """
     t0 = time.time()
     print(f"[TRACE] REGISTER FACE REQUEST RECEIVED for student_id={student_id}")
@@ -163,10 +238,51 @@ def register_face(db : Session  , student_id : int , image_base64 : str):
     t_db = time.time()
     student = StudentRepository.update_encoding_path(db , student , str(encoding_path))
     print(f"[TRACE] DATABASE UPDATED ({time.time() - t_db:.2f}s to update DB)")
-
+    
+    # update cache 
+    t_cache = time.time()
+    recognizer.update_embedding(student_id , str(encoding_path))
+    print(f"[TRACE] CACHE UPDATED ({time.time() - t_cache:.4f}s to update cache)")
+    
     print(f"[TRACE] REGISTER FACE COMPLETED in {time.time() - t0:.2f}s total")
 
     return {
         "student" : student,
         "encoding_path": str(encoding_path)
     }
+
+
+    """
+                 FASTAPI STARTUP
+                          │
+                          ▼
+                 initialize_face_cache()
+                          │
+                          ▼
+                    PostgreSQL
+                          │
+                    embedding paths
+                          │
+                          ▼
+                    .npy files
+                          │
+                          ▼
+                       RAM
+                          │
+                          ▼
+                  embedding_matrix
+                          │
+              ┌───────────┴───────────┐
+              │                       │
+        Attendance                Registration
+              │                       │
+              ▼                       ▼
+       Live embedding             New embedding
+              │                       │
+              ▼                    Save .npy
+       Matrix matching                │
+              │                    Update DB
+              ▼                       │
+        Best student                  ▼
+                              Update RAM cache
+    """

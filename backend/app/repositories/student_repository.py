@@ -34,7 +34,7 @@ class StudentRepository:
     @staticmethod
     def get_all(db: Session) -> list[Student]:
         """Get all students from the database"""
-        return db.query(Student).all()
+        return db.query(Student).filter(Student.is_active==True).all()
 
     @staticmethod
     def create(db: Session, student: Student) -> Student:

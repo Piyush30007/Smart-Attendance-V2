@@ -7,15 +7,14 @@ class DashboardService:
 
     @staticmethod
     def get_stats(db: Session):
+        total_students = DashboardRepository.total_students(db)
+        present = DashboardRepository.present_today(db)
+        absent = max(0, total_students - present)
 
         return {
-            "students": DashboardRepository.total_students(db),
-
-            "teachers": 0,
-
+            "students": total_students,
+            "teachers": DashboardRepository.total_teacher(db),
             "subjects": 0,
-
-            "present": 0,
-
-            "absent": 0,
+            "present": present,
+            "absent": absent,
         }

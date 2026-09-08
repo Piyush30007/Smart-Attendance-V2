@@ -13,11 +13,11 @@ class FaceEmbedder:
         Returns : 
                 numpy array of shape (512 ,) , or None if no face is detected
         """
-        faces = self.app.get(frame)
+        faces = self.app.get(frame)#<--- 1. SCRFD runs first to locate face & landmarks
         if not faces :
             return None
         
-        #select the largest face
+        #select the largest face produce by SCRFD 
         face = max(faces , key=lambda f:(f.bbox[2]-f.bbox[0])*(f.bbox[3]-f.bbox[1]))
 
         embedding = face.embedding

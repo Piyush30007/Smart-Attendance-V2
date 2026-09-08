@@ -1,7 +1,7 @@
 import base64
 from datetime import date
 from typing import List, Optional
-
+import time 
 import cv2
 from fastapi import APIRouter, Depends, HTTPException
 import numpy as np
@@ -28,11 +28,12 @@ def mark(
     payload: MarkAttendanceRequest,
     db: Session = Depends(get_db)
 ):
+    total_start = time.perf_counter()    
     image_data = payload.image_base64
 
     if "," in image_data:
         image_data = image_data.split(",", 1)[1]
-
+    t0 = time.perf_counter()
     try:
         frame_bytes = base64.b64decode(image_data)
     except Exception:
@@ -50,34 +51,63 @@ def mark(
             status_code=400,
             detail="Invalid image"
         )
+    decode_time = (time.perf_counter()-t0) * 1000 
+    
+    
     #1 liveness score check first 
+    t0 = time.perf_counter() 
     is_live,score,error = is_liveness_pass(frame) 
-    if error :
+    liveness_time = (time.perf_counter()-t0)*1000 
+    if error:
+        total_time = (time.perf_counter()-total_start)*1000
+        msg = f"[AttendanceTime] Decode={decode_time:.2f}ms | Liveness={liveness_time:.2f}ms | Total={total_time:.2f}ms"
+        print(msg)
+        logger.info(msg)
         raise HTTPException(status_code=400 , detail = f"Liveness check failed: {error}")
     if not is_live:
+        total_time = (time.perf_counter()-total_start)*1000
+        msg = f"[AttendanceTime] Decode={decode_time:.2f}ms | Liveness={liveness_time:.2f}ms | Total={total_time:.2f}ms"
+        print(msg)
+        logger.info(msg)
         raise HTTPException(status_code=403, detail =  "Spoof detected. Please use a live face, not a photo or phone screen.")
     
-
+    t0 = time.perf_counter()
     result = recognize_face(db, frame)
+    recog_time = (time.perf_counter() - t0) * 1000
+    recog_msg = f"[AttendanceTime] Recognition={recog_time:.2f}ms"
+    print(recog_msg)
+    logger.info(recog_msg)
 
     if result is None:
+        total_time = (time.perf_counter() - total_start) * 1000
+        fail_msg = (
+            f"[AttendanceTime] Decode={decode_time:.2f}ms | Liveness={liveness_time:.2f}ms | "
+            f"Recognition={recog_time:.2f}ms | Total={total_time:.2f}ms"
+        )
+        print(fail_msg)
+        logger.info(fail_msg)
         raise HTTPException(
             status_code=404,
             detail="Face not recognized"
         )
 
-    
-
     student = result["student"]
     confidence = result["similarity_score"]
-
+    t0 = time.perf_counter() 
     record, already_marked = mark_attendance(
         db,
         student,
         confidence=confidence,
         liveness_passed=True
     )
-
+    db_time = (time.perf_counter()-t0)*1000 
+    total_time = (time.perf_counter()-total_start)*1000 
+    summary_msg = (
+        f"[AttendanceTime] Decode={decode_time:.2f}ms | Liveness={liveness_time:.2f}ms | "
+        f"Recognition={recog_time:.2f}ms | DB={db_time:.2f}ms | Total={total_time:.2f}ms"
+    )
+    print(summary_msg)
+    logger.info(summary_msg)
     logger.info(
         f"Attendance marked for student_id={student.id}"
     )

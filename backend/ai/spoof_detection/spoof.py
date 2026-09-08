@@ -1,6 +1,7 @@
 """Anti-spoofing helpers for liveness validation."""
 
 import cv2
+import time 
 import numpy as np
 from deepface import DeepFace
 
@@ -21,8 +22,16 @@ def is_liveness_pass(frame):
 
     if not isinstance(frame, np.ndarray) or frame.size == 0:
         return False, 0.0, "Invalid frame"
+    # Temporary debugging information
+    print(
+        f"[Liveness] frame shape={frame.shape}, "
+        f"dtype={frame.dtype}, "
+        f"min={frame.min()}, "
+        f"max={frame.max()}"
+    )
 
     try:
+        t0 = time.perf_counter()
         results = DeepFace.extract_faces(
             img_path=frame,
             detector_backend="opencv",
@@ -30,6 +39,10 @@ def is_liveness_pass(frame):
             align=True,
             anti_spoofing=True,
         )
+        deepface_time = (time.perf_counter()-t0)*1000 
+        print(f"DeepFace time = {deepface_time} ms")
+        print(f"[Liveness] results count = {len(results)}")
+        print(f"[Liveness] results = {results}")
         if not results:
             return False, 0.0, "No Face Detected"
         if len(results)!=1:
