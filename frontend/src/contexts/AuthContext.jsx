@@ -1,18 +1,64 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 
 import authService from "../services/authService";
 
 import { getErrorMessage } from "../utils/getErrorMessage";
 
+function parseJwt(token) {
+  if (!token || typeof token !== "string") return null;
+  try {
+    const parts = token.split(".");
+    if (parts.length < 2) return null;
+    const base64Url = parts[1];
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
+    );
+    const parsed = JSON.parse(jsonPayload);
+    // Invalidate if token has expired
+    if (parsed.exp && parsed.exp * 1000 <= Date.now()) {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
 
-  // Read token from localStorage when the application starts
+  // Read and validate token from localStorage when application starts
+  const [token, setToken] = useState(() => {
+    const savedToken = localStorage.getItem("access_token");
+    if (!savedToken) return null;
+    const parsed = parseJwt(savedToken);
+    if (!parsed) {
+      // Clear expired or invalid token
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+      return null;
+    }
+    return savedToken;
+  });
 
-  const [token, setToken] = useState(
-    localStorage.getItem("access_token")
-  );
+  // Listen for 401 session expiry events dispatched by api.js
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+      setToken(null);
+    };
+
+    window.addEventListener("auth:unauthorized", handleUnauthorized);
+    return () => {
+      window.removeEventListener("auth:unauthorized", handleUnauthorized);
+    };
+  }, []);
 
 
   // Login with username and password
@@ -169,19 +215,13 @@ export function AuthProvider({ children }) {
   };
 
 
-  const user = token ? (() => {
-    try {
-      return JSON.parse(atob(token.split(".")[1]));
-    } catch {
-      return null;
-    }
-  })() : null;
+  const user = token ? parseJwt(token) : null;
 
   const value = {
     token,
     user,
     role: user?.role,
-    isAuthenticated: !!token,
+    isAuthenticated: !!token && !!user,
     login,
     signup,
     googleLogin,
