@@ -4,7 +4,7 @@ function Sidebar() {
   return (
     <aside className="sidebar">
 
-      <NavLink to="/">
+      <NavLink to="/" end>
         Dashboard
       </NavLink>
 
