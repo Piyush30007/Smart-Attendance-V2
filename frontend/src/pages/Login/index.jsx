@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
 
 import { useAuth } from "../../contexts/AuthContext";
+import "./Login.css";
 
 function Login() {
 
